@@ -13,6 +13,8 @@ type PrismM m s t a b =
   forall p f. (Choice p, Applicative f, ProfunctorM m p, FunctorM m f) =>
     p a (Compose m f b) -> p s (Compose m f t)
 
+type PrismM' m s a = PrismM m s s a a
+
 prismM :: forall m s t a b. Monad m =>
     (b -> m t) -> (s -> m (Either t a)) -> PrismM m s t a b
 prismM bt seta = rmap Compose
@@ -26,8 +28,8 @@ buildM l b = unpack (l (pack $ pure pure)) >>= ($ b)
     pack = Tagged . Compose . fmap Kleisli
     unpack = fmap runKleisli . getCompose . unTagged
 
-matchM :: Monad m => PrismM m s t a b -> s -> m (Either t a)
-matchM l = case l $ SemiMarketM (pure . Right) of
+matchingM :: Monad m => PrismM m s t a b -> s -> m (Either t a)
+matchingM l = case l $ SemiMarketM (pure . Right) of
   SemiMarketM seta ->
     either (fmap (Left . runIdentity) . getCompose) (pure . Right) <=< seta
 

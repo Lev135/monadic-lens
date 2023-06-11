@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 
-{-# LANGUAGE OverloadedLabels      #-}
-{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE OverloadedLabels #-}
 
 module Errors where
 
