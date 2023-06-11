@@ -57,6 +57,7 @@ common basic
     build-depends:    base
                     , lens
                     , mtl
+                    , tagged
 
 library
     import:           basic
@@ -66,6 +67,7 @@ library
                       Control.Lens.Lens.Monadic
                       Control.Lens.Iso.Monadic
                       Control.Lens.Prism.Monadic
+                      Control.Lens.Type.Monadic
     build-depends:
 
 
@@ -83,6 +85,12 @@ executable examples
     main-is:          Main.hs
     other-modules:    Errors
                       Log
+
+                      Parts.Matcher.NonMonadic
+                      Parts.Matcher.Monadic
+                      Parts.Builder.NonMonadic
+                      Parts.Builder.Monadic
+
     build-depends:    monadic-lens
                     , containers
                     , generic-lens
