@@ -1,9 +1,7 @@
 module Control.Lens.Lens.Monadic where
 
-import Control.Applicative (Const(..))
 import Control.Arrow (Kleisli(..))
 import Control.Monad ((>=>))
-import Control.Monad.Identity (Identity(..))
 import Data.Functor.Compose (Compose(..))
 
 type LensM m s t a b =
@@ -23,11 +21,8 @@ lensM getter setter f s =
 class (Monad m, Functor f) => FunctorM m f where
   fmapM :: forall b t. (b -> m t) -> m (f b) -> m (f t)
 
-instance Monad m => FunctorM m (Const a) where
-  fmapM _ c = Const . getConst <$> c
-
-instance Monad m => FunctorM m Identity where
-  fmapM bmt mb = Identity <$> (mb >>= (bmt . runIdentity))
+instance {-# OVERLAPPABLE #-} (Monad m, Traversable f) => FunctorM m f where
+  fmapM bmt mfb = traverse bmt =<< mfb
 
 instance Monad m => FunctorM m (Kleisli m a) where
   fmapM bmt mk = Kleisli . (>=> bmt) . runKleisli <$> mk
