@@ -27,7 +27,7 @@ effectsOrderSpec = do
       run (viewM (f . f) ((n1, n2), n3))
         `shouldBe` (n1, ["((1,2),3)", "(1,2)"])
   context "setter" do
-    let f = setsM \k (a, x) -> do
+    let f = settingM \k (a, x) -> do
               log "before" (a, x)
               a' <- k a
               log "after" (a', x)
