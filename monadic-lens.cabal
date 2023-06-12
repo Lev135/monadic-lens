@@ -62,7 +62,8 @@ common basic
 library
     import:           basic
     hs-source-dirs:   src
-    exposed-modules:  Control.Lens.Getter.Monadic
+    exposed-modules:  Control.Lens.Monadic
+                      Control.Lens.Getter.Monadic
                       Control.Lens.Setter.Monadic
                       Control.Lens.Lens.Monadic
                       Control.Lens.Iso.Monadic
@@ -79,6 +80,9 @@ test-suite monadic-lens-test
     main-is:          Main.hs
     other-modules:
     build-depends:    monadic-lens
+                    , hspec
+                    , QuickCheck
+                    , extra
 
 executable examples
     import:           basic
@@ -87,6 +91,7 @@ executable examples
     other-modules:    Errors
                       Log
                       Traversals
+                      EffectsOrder
 
                       Parts.Matcher.NonMonadic
                       Parts.Matcher.Monadic
