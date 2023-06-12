@@ -14,6 +14,15 @@ lensM :: Monad m => (s -> m a) -> (s -> b -> m t) -> LensM m s t a b
 lensM getter setter f s =
   Compose $ setter s `fmapM` (getter s >>= getCompose . f)
 
+-- | More restrictive constructor of monadic lens providing effects of getter
+-- and setter in both viewing and setting
+lensM2 :: Monad m => (s -> m a) -> (s -> m (b -> t)) -> LensM m s t a b
+lensM2 sma smbt amfb s = Compose $ do
+    a <- sma s
+    fb <- getCompose $ amfb a
+    bt <- smbt s
+    return $ fmap bt fb
+
 {-
   For trivial @m = `Identity`@ we get `fmap` up to isomorphism,
   for trivial @f = `Identity`@ monadic bind operator `>>=`.

@@ -51,6 +51,25 @@ effectsOrderSpec = do
           , "setting 42 into (_1,2)"
           , "setting (42,2) into (_(1,2),3)"
           ])
+  context "lens2" do
+    let f = lensM2 (\(a, b) -> log2 "getting" a "from" (a, b) $> a)
+                   (\(a, b) -> log "setting into" (__ a, b) $> (, b))
+        l = f . f
+    it "view" $
+      run (viewM l ((n1, n2), n3))
+        `shouldBe` (n1,
+          [ "getting (1,2) from ((1,2),3)"
+          , "getting 1 from (1,2)"
+          , "setting into (_1,2)"
+          , "setting into (_(1,2),3)"])
+    it "set" $
+      run (setM l (pure n42) ((n1, n2), n3))
+        `shouldBe` (((n42, n2), n3),
+          [ "getting (1,2) from ((1,2),3)"
+          , "getting 1 from (1,2)"
+          , "setting into (_1,2)"
+          , "setting into (_(1,2),3)"
+          ])
   context "prisms" do
     let f :: forall a b. (Show a, Show b) => PrismM' (Writer Log) (Sum a b) a
         f = prismM (\a -> log2 "building" (L @_ @b a) "from" a $> L a) \case
