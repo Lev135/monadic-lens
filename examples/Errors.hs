@@ -1,13 +1,9 @@
-{-# OPTIONS_GHC -Wno-unused-imports #-}
-
 {-# LANGUAGE OverloadedLabels #-}
 
 module Errors where
 
 import Control.Lens
-import Control.Lens.Getter.Monadic
-import Control.Lens.Lens.Monadic (LensM, LensM', lensM)
-import Control.Lens.Setter.Monadic
+import Control.Lens.Monadic
 import Control.Monad.Except (MonadError(..))
 import Data.Generics.Labels ()
 import Data.Map (Map)
@@ -16,7 +12,9 @@ import GHC.Generics (Generic)
 
 type Record = Map String Value
 
-data Value = I Int | R Record
+data Value
+  = I Int
+  | R Record
   deriving (Generic, Show)
 
 record :: [(String, Value)] -> Value
@@ -34,9 +32,7 @@ mTravFirst l e = lensM getter setter
     getter s = case firstOf l s of
       Nothing -> throwError $ e s
       Just a  -> pure a
-    setter s a = case l (const $ Just a) s of
-      Nothing -> throwError $ e s
-      Just s' -> pure s'
+    setter s a = pure $ set l a s
 
 mLit :: LensM' (Either Err) Value Int
 mLit = mTravFirst #_I NotLit

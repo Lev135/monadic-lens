@@ -91,7 +91,6 @@ executable examples
     other-modules:    Errors
                       Log
                       Traversals
-                      EffectsOrder
 
                       Parts.Matcher.NonMonadic
                       Parts.Matcher.Monadic
