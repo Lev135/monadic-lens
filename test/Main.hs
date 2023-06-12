@@ -69,7 +69,7 @@ effectsOrderSpec = do
     it "matching failed 1" $
       run (matchingM l test_failed1)
         `shouldBe` (Left (R n1), ["failed match from R 1"])
-    it "matching succeed 2" $
+    it "matching failed 2" $
       run (matchingM l test_failed2)
         `shouldBe` (Left (L (R n1)),
           [ "succeed match R 1 from L (R 1)"
