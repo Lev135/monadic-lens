@@ -20,41 +20,52 @@ effectsOrderSpec = do
       log'  a = tell [show a]
       run = runWriter @Log
       (n1, n2, n3, n42) = (1, 2, 3, 42) :: (Int, Int, Int, Int)
+  let getter = toM (\s -> log' s $> fst s)
+      setter = settingM \k (a, x) -> do
+          log "before" (a, x)
+          a' <- k a
+          log "after" (a', x)
+          pure (a', x)
+      mval42 = n42 <$ tell ["42"]
+      lens = lensM (\(a, b) -> log2 "getting" a "from" (a, b) $> a)
+                  (\(a, b) a' -> log2 "setting" a' "into" (__ a, b) $> (a', b))
+      lens2 = lensM2 (\(a, b) -> log2 "getting" a "from" (a, b) $> a)
+                   (\(a, b) -> log "setting into" (__ a, b) $> (, b))
+      prism :: forall a b. (Show a, Show b) => PrismM' (Writer Log) (Sum a b) a
+      prism = prismM (\a -> log2 "building" (L @_ @b a) "from" a $> L a) \case
+              L a -> log2 "succeed match" a "from" (L @_ @b a) $> Right a
+              R a -> log "failed match from" (R @a a) $> Left (R a)
 
   context "getter" do
-    let f = toM (\s -> log' s $> fst s)
     it "view" $
-      run (viewM (f . f) ((n1, n2), n3))
+      run (viewM (getter . getter) ((n1, n2), n3))
         `shouldBe` (n1, ["((1,2),3)", "(1,2)"])
   context "setter" do
-    let f = settingM \k (a, x) -> do
-              log "before" (a, x)
-              a' <- k a
-              log "after" (a', x)
-              pure (a', x)
     it "set" $
-      run (setM (f . f) (pure n42) ((n1, n2), n3))
+      run (setM (setter . setter) mval42 ((n1, n2), n3))
         `shouldBe` (((n42, n2), n3),
-          ["before ((1,2),3)", "before (1,2)", "after (42,2)", "after ((42,2),3)"])
+          [ "before ((1,2),3)"
+          , "before (1,2)"
+          , "42"
+          , "after (42,2)"
+          , "after ((42,2),3)"
+          ])
   context "lens" do
-    let f = lensM (\(a, b) -> log2 "getting" a "from" (a, b) $> a)
-                  (\(a, b) a' -> log2 "setting" a' "into" (__ a, b) $> (a', b))
-        l = f . f
+    let l = lens . lens
     it "view" $
       run (viewM l ((n1, n2), n3))
         `shouldBe` (n1, ["getting (1,2) from ((1,2),3)", "getting 1 from (1,2)"])
     it "set" $
-      run (setM l (pure n42) ((n1, n2), n3))
+      run (setM l mval42 ((n1, n2), n3))
         `shouldBe` (((n42, n2), n3),
           [ "getting (1,2) from ((1,2),3)"
           , "getting 1 from (1,2)"
+          , "42"
           , "setting 42 into (_1,2)"
           , "setting (42,2) into (_(1,2),3)"
           ])
   context "lens2" do
-    let f = lensM2 (\(a, b) -> log2 "getting" a "from" (a, b) $> a)
-                   (\(a, b) -> log "setting into" (__ a, b) $> (, b))
-        l = f . f
+    let l = lens2 . lens2
     it "view" $
       run (viewM l ((n1, n2), n3))
         `shouldBe` (n1,
@@ -63,19 +74,16 @@ effectsOrderSpec = do
           , "setting into (_1,2)"
           , "setting into (_(1,2),3)"])
     it "set" $
-      run (setM l (pure n42) ((n1, n2), n3))
+      run (setM l mval42 ((n1, n2), n3))
         `shouldBe` (((n42, n2), n3),
           [ "getting (1,2) from ((1,2),3)"
           , "getting 1 from (1,2)"
+          , "42"
           , "setting into (_1,2)"
           , "setting into (_(1,2),3)"
           ])
   context "prisms" do
-    let f :: forall a b. (Show a, Show b) => PrismM' (Writer Log) (Sum a b) a
-        f = prismM (\a -> log2 "building" (L @_ @b a) "from" a $> L a) \case
-              L a -> log2 "succeed match" a "from" (L @_ @b a) $> Right a
-              R a -> log "failed match from" (R @a a) $> Left (R a)
-        l = f . f
+    let l = prism . prism
         test_succeed = L (L n1) :: Sum (Sum Int Int) Int
         test_failed1 = R n1 :: Sum (Sum Int Int) Int
         test_failed2 = L (R n1) :: Sum (Sum Int Int) Int
@@ -93,25 +101,77 @@ effectsOrderSpec = do
         `shouldBe` (Left (L (R n1)),
           [ "succeed match R 1 from L (R 1)"
           , "failed match from R 1"
-          , "building L (R 1) from R 1"      -- it's a very unexpected behavior!
+          , "building L (R 1) from R 1"
           ])
     it "set succeed" $
-      run (setM l (pure n42) test_succeed)
+      run (setM l mval42 test_succeed)
         `shouldBe` (L (L n42),
           [ "succeed match L 1 from L (L 1)"
           , "succeed match 1 from L 1"
+          , "42"
           , "building L 42 from 42"
           , "building L (L 42) from L 42"
           ])
     it "set failed 1" $
-      run (setM l (pure n42) test_failed1)
+      run (setM l mval42 test_failed1)
         `shouldBe` (R n1, ["failed match from R 1"])
     it "set failed 2" $
-      run (setM l (pure n42) test_failed2)
+      run (setM l mval42 test_failed2)
         `shouldBe` (L (R n1),
           [ "succeed match R 1 from L (R 1)"
           , "failed match from R 1"
           , "building L (R 1) from R 1"
+          ])
+    it "preview succeed" $
+      run (previewM l test_succeed)
+        `shouldBe` (Just n1,
+          [ "succeed match L 1 from L (L 1)"
+          , "succeed match 1 from L 1"
+          ])
+    it "preview failed 1" $
+      run (previewM l test_failed1)
+        `shouldBe` (Nothing, ["failed match from R 1"])
+    it "preview failed 2" $
+      run (previewM l test_failed2)
+        `shouldBe` (Nothing,
+          [ "succeed match R 1 from L (R 1)"
+          , "failed match from R 1"
+          ])
+  context "lens . prism . prism" do
+    let l = lens . prism . prism
+        test_succeed = (L (L n1), n2) :: (Sum (Sum Int Int) Int, Int)
+        test_failed1 = (R    n1,  n2) :: (Sum (Sum Int Int) Int, Int)
+        test_failed2 = (L (R n1), n2) :: (Sum (Sum Int Int) Int, Int)
+    it "preview succeed" $
+      run (previewM l test_succeed)
+        `shouldBe` (Just n1,
+          [ "getting L (L 1) from (L (L 1),2)"
+          , "succeed match L 1 from L (L 1)"
+          , "succeed match 1 from L 1"
+          ])
+    it "preview failed 1" $
+      run (previewM l test_failed1)
+        `shouldBe` (Nothing,
+          [ "getting R 1 from (R 1,2)"
+          , "failed match from R 1"
+          ])
+    it "preview failed 2" $
+      run (previewM l test_failed2)
+        `shouldBe` (Nothing,
+          [ "getting L (R 1) from (L (R 1),2)"
+          , "succeed match R 1 from L (R 1)"
+          , "failed match from R 1"
+          ])
+    it "set succeed" $
+      run (setM l mval42 test_succeed)
+        `shouldBe` ((L $ L 42, 2),
+          [ "getting L (L 1) from (L (L 1),2)"
+          , "succeed match L 1 from L (L 1)"
+          , "succeed match 1 from L 1"
+          , "42"
+          , "building L 42 from 42"
+          , "building L (L 42) from L 42"
+          , "setting L (L 42) into (_L (L 1),2)"
           ])
 
 data Sum a b
