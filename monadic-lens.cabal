@@ -70,6 +70,7 @@ library
                       Control.Lens.Prism.Monadic
                       Control.Lens.Type.Monadic
                       Control.Lens.Traversal.Monadic
+                      Control.Lens.Fold.Monadic
     build-depends:
 
 

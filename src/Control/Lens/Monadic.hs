@@ -5,9 +5,11 @@ module Control.Lens.Monadic (
   module Control.Lens.Traversal.Monadic,
   module Control.Lens.Getter.Monadic,
   module Control.Lens.Setter.Monadic,
-  module Control.Lens.Type.Monadic
+  module Control.Lens.Type.Monadic,
+  module Control.Lens.Fold.Monadic
 ) where
 
+import Control.Lens.Fold.Monadic
 import Control.Lens.Getter.Monadic
 import Control.Lens.Iso.Monadic
 import Control.Lens.Lens.Monadic
