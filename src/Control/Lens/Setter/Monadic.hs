@@ -8,6 +8,8 @@ type SetterM m s t a b =
   forall f. Settable f =>
     (a -> Compose m f b) -> s -> Compose m f t
 
+type SetterM' m s a = SetterM m s s a a
+
 type ASetterM m s t a b =
   (a -> Compose m Identity b) -> s -> Compose m Identity t
 

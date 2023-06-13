@@ -78,7 +78,7 @@ test-suite monadic-lens-test
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
     main-is:          Main.hs
-    other-modules:
+    other-modules:    Laws
     build-depends:    monadic-lens
                     , hspec
                     , QuickCheck
