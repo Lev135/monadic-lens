@@ -1,4 +1,4 @@
-module Control.Lens.Setter.Monadic where
+module Control.Lens.Monadic.Setter where
 
 import Control.Lens.Internal.Setter (Settable(untainted))
 import Control.Monad.Identity (Identity(..))

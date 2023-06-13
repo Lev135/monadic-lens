@@ -1,7 +1,7 @@
-module Control.Lens.Traversal.Monadic where
+module Control.Lens.Monadic.Traversal where
 
-import Control.Lens.Lens.Monadic (FunctorM)
-import Control.Lens.Type.Monadic
+import Control.Lens.Monadic.Lens (FunctorM)
+import Control.Lens.Monadic.Type
 import Data.Functor.Compose (Compose(..))
 
 type TraversalM m s t a b

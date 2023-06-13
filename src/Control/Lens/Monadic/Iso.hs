@@ -1,9 +1,9 @@
-module Control.Lens.Iso.Monadic where
+module Control.Lens.Monadic.Iso where
 
 import Control.Lens (Profunctor(..), getting)
-import Control.Lens.Getter.Monadic (viewM)
-import Control.Lens.Lens.Monadic (FunctorM(..))
-import Control.Lens.Prism.Monadic (ProfunctorM(fish), buildM)
+import Control.Lens.Monadic.Getter (viewM)
+import Control.Lens.Monadic.Lens (FunctorM(..))
+import Control.Lens.Monadic.Prism (ProfunctorM(fish), buildM)
 import Data.Functor (($>))
 import Data.Functor.Compose (Compose(..))
 

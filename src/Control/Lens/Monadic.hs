@@ -1,19 +1,19 @@
 module Control.Lens.Monadic (
-  module Control.Lens.Iso.Monadic,
-  module Control.Lens.Lens.Monadic,
-  module Control.Lens.Prism.Monadic,
-  module Control.Lens.Traversal.Monadic,
-  module Control.Lens.Getter.Monadic,
-  module Control.Lens.Setter.Monadic,
-  module Control.Lens.Type.Monadic,
-  module Control.Lens.Fold.Monadic
+  module Control.Lens.Monadic.Iso,
+  module Control.Lens.Monadic.Lens,
+  module Control.Lens.Monadic.Prism,
+  module Control.Lens.Monadic.Traversal,
+  module Control.Lens.Monadic.Getter,
+  module Control.Lens.Monadic.Setter,
+  module Control.Lens.Monadic.Type,
+  module Control.Lens.Monadic.Fold
 ) where
 
-import Control.Lens.Fold.Monadic
-import Control.Lens.Getter.Monadic
-import Control.Lens.Iso.Monadic
-import Control.Lens.Lens.Monadic
-import Control.Lens.Prism.Monadic
-import Control.Lens.Setter.Monadic
-import Control.Lens.Traversal.Monadic
-import Control.Lens.Type.Monadic
+import Control.Lens.Monadic.Fold
+import Control.Lens.Monadic.Getter
+import Control.Lens.Monadic.Iso
+import Control.Lens.Monadic.Lens
+import Control.Lens.Monadic.Prism
+import Control.Lens.Monadic.Setter
+import Control.Lens.Monadic.Traversal
+import Control.Lens.Monadic.Type

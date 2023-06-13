@@ -1,8 +1,8 @@
-module Control.Lens.Fold.Monadic where
+module Control.Lens.Monadic.Fold where
 
 import Control.Applicative (Const(..))
-import Control.Lens.Getter.Monadic (GettingM, viewM)
 import Control.Lens.Internal.Fold (Leftmost(..), getLeftmost)
+import Control.Lens.Monadic.Getter (GettingM, viewM)
 import Control.Monad ((<=<), (>=>))
 import Control.Monad.Reader (MonadReader, asks)
 import Data.Foldable (traverse_)

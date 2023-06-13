@@ -2,10 +2,10 @@
 module Traversals where
 
 import Control.Lens
-import Control.Lens.Iso.Monadic
-import Control.Lens.Setter.Monadic
-import Control.Lens.Traversal.Monadic
-import Control.Lens.Type.Monadic
+import Control.Lens.Monadic.Iso
+import Control.Lens.Monadic.Setter
+import Control.Lens.Monadic.Traversal
+import Control.Lens.Monadic.Type
 import Control.Monad.Writer
 import Data.Functor (($>))
 import Prelude hiding (log)

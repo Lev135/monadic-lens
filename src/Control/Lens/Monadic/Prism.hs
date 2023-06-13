@@ -1,9 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
-module Control.Lens.Prism.Monadic where
+module Control.Lens.Monadic.Prism where
 
 import Control.Arrow (Kleisli(..))
 import Control.Lens (Choice(..), Identity(..), Profunctor(..))
-import Control.Lens.Lens.Monadic (FunctorM(..))
+import Control.Lens.Monadic.Lens (FunctorM(..))
 import Control.Monad ((<=<), (>=>))
 import Data.Bifunctor (Bifunctor(..))
 import Data.Functor.Compose (Compose(..))

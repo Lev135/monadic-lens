@@ -63,14 +63,14 @@ library
     import:           basic
     hs-source-dirs:   src
     exposed-modules:  Control.Lens.Monadic
-                      Control.Lens.Getter.Monadic
-                      Control.Lens.Setter.Monadic
-                      Control.Lens.Lens.Monadic
-                      Control.Lens.Iso.Monadic
-                      Control.Lens.Prism.Monadic
-                      Control.Lens.Type.Monadic
-                      Control.Lens.Traversal.Monadic
-                      Control.Lens.Fold.Monadic
+                      Control.Lens.Monadic.Getter
+                      Control.Lens.Monadic.Setter
+                      Control.Lens.Monadic.Lens
+                      Control.Lens.Monadic.Iso
+                      Control.Lens.Monadic.Prism
+                      Control.Lens.Monadic.Type
+                      Control.Lens.Monadic.Traversal
+                      Control.Lens.Monadic.Fold
     build-depends:
 
 

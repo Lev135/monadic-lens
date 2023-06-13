@@ -3,11 +3,11 @@
 module Log where
 
 import Control.Lens
-import Control.Lens.Getter.Monadic
-import Control.Lens.Iso.Monadic
-import Control.Lens.Lens.Monadic
-import Control.Lens.Prism.Monadic
-import Control.Lens.Setter.Monadic
+import Control.Lens.Monadic.Getter
+import Control.Lens.Monadic.Iso
+import Control.Lens.Monadic.Lens
+import Control.Lens.Monadic.Prism
+import Control.Lens.Monadic.Setter
 import Control.Monad.Writer
 import Data.Functor (($>))
 import Prelude hiding (log)

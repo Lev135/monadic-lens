@@ -1,4 +1,4 @@
-module Control.Lens.Getter.Monadic where
+module Control.Lens.Monadic.Getter where
 
 import Control.Applicative (Const(..))
 import Control.Monad.Reader (MonadReader(ask))

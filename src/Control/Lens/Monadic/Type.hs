@@ -1,4 +1,4 @@
-module Control.Lens.Type.Monadic where
+module Control.Lens.Monadic.Type where
 
 import Data.Functor.Compose (Compose)
 

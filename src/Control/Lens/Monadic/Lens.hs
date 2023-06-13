@@ -1,4 +1,4 @@
-module Control.Lens.Lens.Monadic where
+module Control.Lens.Monadic.Lens where
 
 import Control.Arrow (Kleisli(..))
 import Control.Monad ((>=>))
