@@ -2,13 +2,13 @@ module Control.Lens.Monadic.Iso where
 
 import Control.Lens (Profunctor(..), getting)
 import Control.Lens.Monadic.Getter (viewM)
-import Control.Lens.Monadic.Lens (FunctorM(..))
+import Control.Lens.Monadic.Lens (TraversableLike(..), fmapM)
 import Control.Lens.Monadic.Prism (ProfunctorM(fish), buildM)
 import Data.Functor (($>))
 import Data.Functor.Compose (Compose(..))
 
 type IsoM m s t a b =
-  forall p f. (ProfunctorM m p, FunctorM m f) =>
+  forall p f. (ProfunctorM m p, TraversableLike m f) =>
     p a (Compose m f b) -> p s (Compose m f t)
 
 type IsoM' m s a = IsoM m s s a a

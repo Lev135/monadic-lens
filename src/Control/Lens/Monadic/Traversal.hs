@@ -1,11 +1,11 @@
 module Control.Lens.Monadic.Traversal where
 
-import Control.Lens.Monadic.Lens (FunctorM)
+import Control.Lens.Monadic.Lens (TraversableLike)
 import Control.Lens.Monadic.Type
 import Data.Functor.Compose (Compose(..))
 
 type TraversalM m s t a b
-  = forall f. (Applicative f, FunctorM m f) =>
+  = forall f. (Applicative f, TraversableLike m f) =>
       (a -> Compose m f b) -> (s -> Compose m f t)
 
 type TraversalM' m s a = TraversalM m s s a a

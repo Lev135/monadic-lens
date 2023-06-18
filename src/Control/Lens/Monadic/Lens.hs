@@ -1,11 +1,11 @@
 module Control.Lens.Monadic.Lens where
 
 import Control.Arrow (Kleisli(..))
-import Control.Monad ((>=>))
+import Control.Monad ((<=<))
 import Data.Functor.Compose (Compose(..))
 
 type LensM m s t a b =
-  forall f. FunctorM m f =>
+  forall f. TraversableLike m f =>
     (a -> Compose m f b) -> s -> Compose m f t
 
 type LensM' m s a = LensM m s s a a
@@ -23,15 +23,38 @@ lensM2 sma smbt amfb s = Compose $ do
     bt <- smbt s
     return $ fmap bt fb
 
-{-
-  For trivial @m = `Identity`@ we get `fmap` up to isomorphism,
-  for trivial @f = `Identity`@ monadic bind operator `>>=`.
+{- | The class of 'Functor's @t@, for which traverse-like function for specific
+  applicative functor @f@.
+
+  For trivial @f = Identity@ we should get 'fmap' up to 'coerce'.
+  @instance Functor f => TraversableLike f t@ is not provided though, since in
+  this case it should be INCOHERENT.
+
+  Since type @f@ is restricted only one law from "Data.Traversable" is preserved:
+
+  [Naturality]
+    @t . 'traverseLike' f ≡ 'traverseLike' (t . f)@
+    for every applicative transformation @t@
 -}
-class (Monad m, Functor f) => FunctorM m f where
-  fmapM :: forall b t. (b -> m t) -> m (f b) -> m (f t)
+class (Applicative f, Functor t) => TraversableLike f t where
+  traverseLike :: (a -> f b) -> t a -> f (t b)
 
-instance {-# OVERLAPPABLE #-} (Monad m, Traversable f) => FunctorM m f where
-  fmapM bmt mfb = traverse bmt =<< mfb
+{- | This instance is marked as OVERLAPPABLE to escape type errors, when @t@
+  is actually not 'Traversable'. However, for real 'Traversable's this instance
+  is not expected to be overwritten.
+-}
+instance {-# OVERLAPPABLE #-} (Applicative f, Traversable t) => TraversableLike f t where
+  traverseLike = traverse
 
-instance Monad m => FunctorM m (Kleisli m a) where
-  fmapM bmt mk = Kleisli . (>=> bmt) . runKleisli <$> mk
+{- | @Kleisli m a@ is not a 'Traversable' (and even not 'Foldable').
+  However we can define 'traverseLike' function for it's monad @m@.
+-}
+instance (Monad m) => TraversableLike m (Kleisli m a) where
+  traverseLike h = pure . Kleisli . (h <=<) . runKleisli
+
+{- | Convenient derivative from 'traverseLike' function for monads.
+  For trivial @m = `Identity`@ is isomorphic to `fmap`, for trivial
+  @f = `Identity`@ to monadic bind operator `>>=`.
+-}
+fmapM :: (Monad m, TraversableLike m f) => forall b t. (b -> m t) -> m (f b) -> m (f t)
+fmapM bmt = (traverseLike bmt =<<)

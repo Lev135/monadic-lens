@@ -3,14 +3,14 @@ module Control.Lens.Monadic.Prism where
 
 import Control.Arrow (Kleisli(..))
 import Control.Lens (Choice(..), Identity(..), Profunctor(..))
-import Control.Lens.Monadic.Lens (FunctorM(..))
+import Control.Lens.Monadic.Lens (TraversableLike(..), fmapM)
 import Control.Monad ((<=<), (>=>))
 import Data.Bifunctor (Bifunctor(..))
 import Data.Functor.Compose (Compose(..))
 import Data.Tagged (Tagged(..), retag)
 
 type PrismM m s t a b =
-  forall p f. (Choice p, Applicative f, ProfunctorM m p, FunctorM m f) =>
+  forall p f. (Choice p, Applicative f, ProfunctorM m p, TraversableLike m f) =>
     p a (Compose m f b) -> p s (Compose m f t)
 
 type PrismM' m s a = PrismM m s s a a
