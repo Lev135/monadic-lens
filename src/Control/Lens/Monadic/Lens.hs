@@ -14,14 +14,41 @@ lensM :: Monad m => (s -> m a) -> (s -> b -> m t) -> LensM m s t a b
 lensM getter setter f s =
   Compose $ setter s `fmapM` (getter s >>= getCompose . f)
 
+{- | Type synonym for effectful lens, providing only forward effects.
+
+  Every 'LensMFwd' is a 'LensM'.
+  Since its definition doesn't depend on the 'TraversableLike' class, you can
+  provide 'LensMFwd' without depending on this package.
+
+  /NB!/ This type signature doesn't prevent you of specifying something like
+  backward effects. For example, you can write the following constructor:
+
+  @
+    bad :: Monad m => (s -> m a) -> (s -> m (b -> t)) -> LensMFwd m s t a b
+    bad getter setter f s = Compose $ do
+        a <- getter s
+        fb <- getCompose $ f a
+        bt <- setter s
+        return $ fmap bt fb
+  @
+
+  However, it breaks our division on forward and backward effects: the effects
+  from @setter@ would apply in backward direction both while viewing and setting.
+-}
+type LensMFwd m s t a b =
+  forall f. Functor f =>
+    (a -> Compose m f b) -> s -> Compose m f t
+
+{- | Type synonym for type-preserving 'LensMFwd'
+-}
+type LensMFwd' m s a = LensMFwd m s s a a
+
 -- | More restrictive constructor of monadic lens providing effects of getter
 -- and setter in both viewing and setting
-lensM2 :: Monad m => (s -> m a) -> (s -> m (b -> t)) -> LensM m s t a b
-lensM2 sma smbt amfb s = Compose $ do
-    a <- sma s
-    fb <- getCompose $ amfb a
-    bt <- smbt s
-    return $ fmap bt fb
+lensMFwd :: Monad m => (s -> m a) -> (s -> b -> t) -> LensMFwd m s t a b
+lensMFwd getter setter f s =
+  Compose $ (setter s <$>) <$> (getter s >>= getCompose . f)
+
 
 {- | The class of 'Functor's @t@, for which traverse-like function for specific
   applicative functor @f@.

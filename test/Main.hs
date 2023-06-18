@@ -29,8 +29,8 @@ effectsOrderSpec = do
       mval42 = n42 <$ tell ["42"]
       lens = lensM (\(a, b) -> log2 "getting" a "from" (a, b) $> a)
                   (\(a, b) a' -> log2 "setting" a' "into" (__ a, b) $> (a', b))
-      lens2 = lensM2 (\(a, b) -> log2 "getting" a "from" (a, b) $> a)
-                   (\(a, b) -> log "setting into" (__ a, b) $> (, b))
+      lensFwd = lensMFwd (\(a, b) -> log2 "getting" a "from" (a, b) $> a)
+                         (\(_, b) -> (, b))
       prism :: forall a b. (Show a, Show b) => PrismM' (Writer Log) (Sum a b) a
       prism = prismM (\a -> log2 "building" (L @_ @b a) "from" a $> L a) \case
               L a -> log2 "succeed match" a "from" (L @_ @b a) $> Right a
@@ -64,23 +64,20 @@ effectsOrderSpec = do
           , "setting 42 into (_1,2)"
           , "setting (42,2) into (_(1,2),3)"
           ])
-  context "lens2" do
-    let l = lens2 . lens2
+  context "lensFwd" do
+    let l = lensFwd . lensFwd
     it "view" $
       run (viewM l ((n1, n2), n3))
         `shouldBe` (n1,
           [ "getting (1,2) from ((1,2),3)"
           , "getting 1 from (1,2)"
-          , "setting into (_1,2)"
-          , "setting into (_(1,2),3)"])
+          ])
     it "set" $
       run (setM l mval42 ((n1, n2), n3))
         `shouldBe` (((n42, n2), n3),
           [ "getting (1,2) from ((1,2),3)"
           , "getting 1 from (1,2)"
           , "42"
-          , "setting into (_1,2)"
-          , "setting into (_(1,2),3)"
           ])
   context "prisms" do
     let l = prism . prism
