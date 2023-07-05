@@ -1,13 +1,13 @@
 module Control.Lens.Monadic (
   -- $about
 
-  -- * What is an effecful optics?
+  -- * #effOptics# What is an effecful optics?
   -- $effOptics
 
-  -- * The order of effects
+  -- * #order# The order of effects
   -- $order
 
-  -- * The laws
+  -- * #laws# The laws
   -- $laws
 
   module Control.Lens.Monadic.Iso,

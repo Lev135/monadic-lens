@@ -1,0 +1,94 @@
+view . to ≡ id:
+view (to h)
+  ≡ view (\f -> phantom . f . h)
+  ≡ getConst . (\f -> phantom . f . h) Const
+  ≡ getConst . phantom . Const . h
+  ≡ h
+
+to (view l) ≡ l:
+l :: forall f. (Contravariant f, Functor f) => (a -> f a) -> s -> f s
+l afa ≡ phantom . afa . get
+to (view l) afa
+  ≡ to (getConst . l Const) afa
+  ≡ phantom . afa . getConst . l Const
+  ≡ phantom . afa . getConst . phantom . Const . get
+  ≡ phantom . afa . get
+  ≡ l afa
+
+
+to (k . h) ≡ to h . to k:
+to h . to k
+  ≡ (\f -> phantom . f . h) . (\f -> phantom . f . k)
+  ≡ \f -> phantom . (phantom . f . k) . h
+  ≡ \f -> phantom . f . k . h
+  ≡ to (k . h)
+
+viewM . toM ≡ id:
+viewM (toM h)
+  ≡ viewM (\afa -> phantom . collect' afa . h)
+  ≡ getConst . phantom . collect' (Const . pure) . h
+  ≡ getConst . phantom . Const . (getConst . Const . pure =<<) . h
+  ≡ h
+
+toM (viewM l) afa
+  ≡ toM (getConst . l (Const . pure)) afa
+  ≡ phantom . collect' afa . getConst . l (Const . pure)
+
+toM f . toM g ≡ toM (g <=< f)
+toM f . toM g
+  ≡ (\afa -> phantom . collect' afa . f)
+    . (\afa -> phantom . collect' afa . g)
+  ≡ \afa -> phantom . collect' (phantom . collect' afa . g) . f
+-- specializing to Const
+  ≡ \afa -> phantom . Const . (
+      getConst . (phantom . Const . (getConst . afa =<<) . g) =<<
+    ) . f
+  ≡ \afa -> Const . (
+      getConst . (Const . (getConst . afa =<<) . g) =<<
+    ) . f
+  ≡ \afa -> Const . (
+      (getConst . afa =<<) . g =<<
+    ) . f
+-- (k =<<) . k' ≡ k <=< k'
+  ≡ \afa -> Const . (getConst . afa <=< g) <=< f
+  ≡ \afa -> Const . (<=< f) (getConst . afa <=< g)
+  ≡ \afa -> Const . (<=< f) (getConst . afa <=< g)
+  ≡ \afa -> phantom . collect' afa . (g <=< f)
+
+
+
+
+p :: forall f. Functor f => (a -> f b) -> (s -> f t)
+t :: forall x. f x -> g x
+
+p (t . k) = t . p k
+
+lh :: Getter s a ≡ forall f. _ => (a -> f a) -> s -> f s
+lk :: Getter a u ≡ forall f. _ => (u -> f u) -> a -> f a
+
+t = first (lk Const) :: forall x. Const a x -> Const (Const u a) x
+lh Const :: s -> Const a s
+
+
+
+lk Const . getConst . lh Const
+  -- g . getConst ≡ getConst . first g
+  ≡ getConst . first (lk Const) . lh Const
+  -- jaror's property: first (lk Const) is a natural transformation
+  ≡ getConst . lh (first (lk Const) . Const)
+  -- first g . Const ≡ Const . g
+  ≡ getConst . lh (Const . lk Const)
+  -- When applied to a Const value, Const is a natural transformation
+  ≡ getConst . Const . lh (lk Const)
+  -- getConst . Const ≡ id
+  ≡ lh (lk Const)
+  ≡ (lh . lk) Const
+  -- LHS = RHS
+
+
+phantom . afa . getConst . l Const
+  ≡ phantom . getConst . first afa . l Const
+  ≡ phantom . getConst . l (first afa . Const)
+  ≡ phantom . getConst . l (Const . afa)
+  ≡ phantom . getConst . Const . l afa
+  ≡
