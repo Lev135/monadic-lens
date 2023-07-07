@@ -3,8 +3,8 @@ module Control.Lens.Monadic.Traversal where
 import Control.Lens.Monadic.Internal
 
 type TraversalM m s t a b
-  = forall f. (Applicative f, Module m f) =>
-    (a -> f b) -> (s -> f t)
+  = forall f. (Applicative (f m), Join f) =>
+    (a -> f m b) -> (s -> f m t)
 
 type TraversalM' m s a = TraversalM m s s a a
 

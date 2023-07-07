@@ -34,13 +34,12 @@ which provide connection between setter and getter:
 import Control.Lens.Monadic.Internal
 
 -- | Type synonym for type-modifying effectful lens
-type LensM m s t a b =
-  forall f. (Functor f, Module m f) =>
-    (a -> f b) -> s -> f t
+type LensM m s t a b
+  = forall f. (Functor (f m), Join f) =>
+      (a -> f m b) -> s -> f m t
 
-{-| Type synonym for type-preserving effectful lens
--}
+-- | Type synonym for type-preserving effectful lens
 type LensM' m s a = LensM m s s a a
 
 lensM :: Monad m => (s -> m a) -> (s -> b -> m t) -> LensM m s t a b
-lensM getter setter afb s = rbind (setter s) $ lbind afb (getter s)
+lensM getter setter afb s = bindIn (setter s) . bindOut afb $ getter s

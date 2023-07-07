@@ -24,15 +24,25 @@ module Control.Lens.Monadic.Setter (
 -- 'overM' l f '<=<' 'overM' l g ≈ 'overM' l (f '<=<' g)@
 --
 -- See more about laws in "Control.Lens.Monadic#g:laws"
+
+-- * Concrete representation
+  ASetterM, ASetterM'
 ) where
-import qualified Control.Lens as L
+
+import Control.Lens.Monadic.Internal
+import Control.Monad.Identity
+import Data.Coerce
 
 -- | Type synonym for type-modifying effectful setter
 type SetterM m s t a b =
-  (a -> m b) -> s -> m t
+  forall f. (SettableT f, Functor (f m), Join f) => (a -> f m b) -> s -> f m t
 
 -- | Type synonym for type-preserving effectful setter
 type SetterM' m s a = SetterM m s s a a
+
+type ASetterM m s t a b = (a -> IdentityT m b) -> s -> IdentityT m t
+
+type ASetterM' m s a = ASetterM m s s a a
 
 {- | Construct an effectful setter from a 'mapM'-like function.
 
@@ -51,7 +61,7 @@ Through @f@ you can control both forward and backward effects:
 @
 -}
 settingM :: Functor m => ((a -> m b) -> s -> m t) -> SetterM m s t a b
-settingM = id
+settingM ambsmt amb = fromApp . ambsmt (toApp . amb)
 
 {- | Modify a target by an effectful function.
 
@@ -59,14 +69,24 @@ Effects sequence of @overM l h@
 
 @forward l >>= h >>= backward l@
 -}
-overM :: Functor m => SetterM m s t a b -> (a -> m b) -> s -> m t
-overM = id
+overM :: Functor m => ASetterM m s t a b -> (a -> m b) -> s -> m t
+overM = coerce
 
 {- | Set a value to the target.
+
+prop> setM l b = overM l (const b)
 
 Effects sequence of @setM l v@:
 
 @forward l >> v >>= backward l@
 -}
-setM :: Functor m => SetterM m s t a b -> m b -> s -> m t
-setM l b = l (const b)
+setM :: Functor m => ASetterM m s t a b -> m b -> s -> m t
+setM l = overM l . const
+
+class SettableT f where
+  fromApp :: m a -> f m a
+  toApp   :: f m a -> m a
+
+instance SettableT IdentityT where
+  fromApp = coerce
+  toApp = coerce
