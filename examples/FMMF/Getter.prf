@@ -23,39 +23,64 @@ to h . to k
   ≡ \f -> phantom . f . k . h
   ≡ to (k . h)
 
-viewM . toM ≡ id:
 viewM (toM h)
-  ≡ viewM (\afa -> phantom . collect' afa . h)
-  ≡ getConst . phantom . collect' (Const . pure) . h
-  ≡ getConst . phantom . Const . (getConst . Const . pure =<<) . h
-  ≡ h
+  ≡ viewM (\afa -> phantom . ljoin . fmap afa . h)
+  ≡ getConst . (phantom . ljoin . fmap (Const . pure) . h)
+  ≡ getConst . ljoin . fmap (Const . pure) . h
+  ≡ _
 
 toM (viewM l) afa
   ≡ toM (getConst . l (Const . pure)) afa
-  ≡ phantom . collect' afa . getConst . l (Const . pure)
+  ≡ phantom . ljoin . fmap afa . (getConst . l (Const . pure))
+  ≡ phantom . ljoin . fmap afa . getConst . l (Const . pure)
+  ≡ _
 
-toM f . toM g ≡ toM (g <=< f)
-toM f . toM g
-  ≡ (\afa -> phantom . collect' afa . f)
-    . (\afa -> phantom . collect' afa . g)
-  ≡ \afa -> phantom . collect' (phantom . collect' afa . g) . f
--- specializing to Const
-  ≡ \afa -> phantom . Const . (
-      getConst . (phantom . Const . (getConst . afa =<<) . g) =<<
-    ) . f
-  ≡ \afa -> Const . (
-      getConst . (Const . (getConst . afa =<<) . g) =<<
-    ) . f
-  ≡ \afa -> Const . (
-      (getConst . afa =<<) . g =<<
-    ) . f
--- (k =<<) . k' ≡ k <=< k'
-  ≡ \afa -> Const . (getConst . afa <=< g) <=< f
-  ≡ \afa -> Const . (<=< f) (getConst . afa <=< g)
-  ≡ \afa -> Const . (<=< f) (getConst . afa <=< g)
-  ≡ \afa -> phantom . collect' afa . (g <=< f)
+toM h . toM k
+  ≡ (\afa -> phantom . ljoin . fmap afa . h)
+    . (\afa -> phantom . ljoin . fmap afa . k)
+  ≡ \afa -> phantom . ljoin . fmap (phantom . ljoin . fmap afa . k) . h
+  ≡ _
 
+r :: ∀X. X* -> X*
+(r, r) ∈ ∀𝒳. 𝒳* -> 𝒳*
+for all 𝒜 : A <=> A'
+  (r @A, r @A') ∈ 𝒜* -> 𝒜*
+for all 𝒜 : A <=> A'
+  for all (xs, xs') ∈ 𝒜*
+    (r @A xs, r @A' xs') ∈ 𝒜*
+for all a : A -> A'
+  for all xs, xs'
+    xs' = a* xs => (r @A xs, r @A' xs') ∈ a*
+for all a : A -> A'
+  for all xs, xs'
+    xs' = a* xs => a* (r @A xs) = r @A' xs'
+for all a : A -> A'
+  for all xs
+    a* (r @A xs) = r @A' (a* xs)
 
+fold :: ∀X. ∀Y. (X -> Y -> Y) -> Y -> X* -> Y
+(fold, fold) ∈ ∀𝒳. ∀𝒴. (𝒳 -> 𝒴 -> 𝒴) -> 𝒴 -> 𝒳* -> 𝒴
+for all a : A -> A', b : B -> B'
+  (fold @A @B, fold @A' @B') ∈ (a -> b -> b) -> b -> a* -> b
+for all a : A -> A', b : B -> B'
+  for all (⊕, ⊕') ∈ a -> b -> b
+    for all (u, u') ∈ b
+      (fold @A @B (⊕) u, fold @A' @B' (⊕') u') ∈ b
+for all a : A -> A', b : B -> B'
+  for all ⊕ : A -> B -> B, ⊕' : A' -> B' -> B'
+    (for all x ∈ A, y ∈ B. b (x ⊕ y) = a x ⊕' b y) =>
+      for all u ∈ B, u' ∈ B'
+        u' = b u =>
+          fold @A' @B' (⊕') u' = b (fold @A @B (⊕) u)
+for all a : A -> A', b : B -> B'
+  for all ⊕ : A -> B -> B, ⊕' : A' -> B' -> B'
+    (for all x ∈ A, y ∈ B. b (x ⊕ y) = a x ⊕' b y) =>
+      for all u ∈ B, u' ∈ B'
+        fold @A' @B' (⊕') (b u) = b (fold @A @B (⊕) u)
+
+p :: ∀F. (∀X. ∀Y. F X -> F Y) -> (A -> F B) -> (S -> F T)
+(p, p) ∈ ∀ℱ. (∀𝒳. ∀𝒴. ℱ 𝒳 -> ℱ 𝒴) -> (𝒜 -> ℱ ℬ) -> (𝒮 -> ℱ 𝒯)
+for all F :
 
 
 p :: forall f. Functor f => (a -> f b) -> (s -> f t)
@@ -91,4 +116,21 @@ phantom . afa . getConst . l Const
   ≡ phantom . getConst . l (first afa . Const)
   ≡ phantom . getConst . l (Const . afa)
   ≡ phantom . getConst . Const . l afa
-  ≡
+  ≡ l afa
+
+l :: forall f. C f => (a -> f b) -> s -> f t
+t :: forall x. f x -> g x
+`t` is natural with respect to `C`
+l (t . afb) s ≡ t $ l afb s
+l (t . afb) ≡ t . l afb
+
+
+
+phantom . ljoin . fmap afa . getConst . l (Const . pure)
+  ≡ phantom . getConst . first (ljoin . fmap afa) . l (Const . pure)
+  ≡ phantom . getConst . l (first (ljoin . fmap afa) . Const . pure)
+  ≡ phantom . getConst . l (Const . (ljoin . fmap afa) . pure)
+  ≡ phantom . getConst . l (Const . ljoin . pure . afa)
+  ≡ phantom . getConst . l (Const . afa)
+  ≡ phantom . getConst . Const . l afa
+  ≡ l afa

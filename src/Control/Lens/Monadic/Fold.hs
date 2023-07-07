@@ -3,22 +3,22 @@ module Control.Lens.Monadic.Fold where
 import Control.Applicative (Const(..))
 import Control.Lens.Internal.Fold (Leftmost(..), getLeftmost)
 import Control.Lens.Monadic.Getter (GettingM, viewM)
+import Control.Lens.Monadic.Internal
 import Control.Monad ((<=<), (>=>))
 import Control.Monad.Reader (MonadReader, asks)
 import Data.Foldable (traverse_)
-import Data.Functor.Compose (Compose(..))
 import Data.Functor.Contravariant (Contravariant, phantom)
 import Data.Monoid (First(..))
 
 type FoldM m s a =
-  forall f. (Contravariant f, Applicative f) =>
-    (a -> Compose m f a) -> (s -> Compose m f s)
+  forall f. (Contravariant f, Applicative f, Module m f) =>
+    (a -> f a) -> (s -> f s)
 
 foldingM :: (Monad m, Foldable t) => (s -> m (t a)) -> FoldM m s a
-foldingM g f s = Compose $ g s >>= fmap phantom . getCompose . traverse_ f
+foldingM smta afa = lbind (phantom . traverse_ afa) . smta
 
 foldMapOfM :: Functor m => GettingM m r s a -> (a -> m r) -> s -> m r
-foldMapOfM l ar = fmap getConst . getCompose . l (Compose . fmap Const . ar)
+foldMapOfM l amr = getConst . l (Const . amr)
 
 foldOfM :: Applicative m => GettingM m a s a -> s -> m a
 foldOfM = viewM

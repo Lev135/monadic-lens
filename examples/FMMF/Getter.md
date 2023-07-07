@@ -132,20 +132,14 @@ liftGetter l = l
 `GetterFM` and `GetterMF`
 ---
 
-In the previous [note][NOTE] I've considered two ways of defining `GetterM`
-(they are not the only possible of course):
+In the previous [note][NOTE] I've defined `GetterM` in the following way:
 ```hs
-type GetterFM m s a =
-  forall f. (Functor f, Contravariant f) =>
-    (a -> f (m a)) -> s -> f (m s)
-type GetterMF m s a =
+type GetterM m s a =
   forall f. (Functor f, Contravariant f) =>
     (a -> m (f a)) -> s -> m (f s)
 ```
-I claimed, that there's no way to make the first one to be a monadic getter.
-I was wrong (though we need one more constraint there). And now I can say, that
-the second one is unacceptable, since `toM . viewM ≡ asGetterM` law is violated.
-The definition of `toMF` and `viewMF` is straight-forward:
+There is a problem with it: it doesn't satisfy `toM . viewM ≡ asGetterM` law
+in general. The definition of `toMF` and `viewMF` is straight-forward:
 ```hs
 toMF :: Monad m => (s -> m a) -> GetterMF m s a
 toMF h amfa = fmap phantom . amfa <=< h
@@ -162,8 +156,8 @@ but now we are unable to say that
 l amfa ≡ fmap phantom . amfa <=< getM
 ```
 since `l` can apply some effects *after* `amfa` call. Of course, we could just
-claim that every lawful `GetterMF` should satisfy this law, but this is very
-hard to check in general. Let's look at the following `LensMF`'s constructor,
+claim that every lawful `GetterM` should satisfy this law, but this is very
+hard to check in general. Let's look at the following `LensM`'s constructor,
 proposed by one of the readers of my previous note:
 ```hs
 type LensM m s t a b =
@@ -193,56 +187,7 @@ For my definition of `lensM` (with the type
 since `setter`'s effects are escaped on viewing. However, it would be much
 nicer if the type of the `GetterM` ensured getter's laws.
 
-It seems like `GetterFM` should give us what we want. However, to write `toM`
-function for it we need extra constraint on `f` allowing us to take `f` outside
-of `m`, i.e. `distribute :: m (f a) -> f (m a)`. Of course, `Const x` is not
-a distributive functor, but `Const (m x)` can distribute over `m`.
-So we get such implementation:
-```hs
-type GetterFM m s a =
-  forall f. (Contravariant f, Functor f, Distributive' m f) =>
-    (a -> f (m a)) -> s -> f (m s)
 
-toFM :: Monad m => (s -> m a) -> GetterFM m s a
-toFM h f = phantom . distribute' . fmap f . h
-
-viewFM :: Monad m => GetterFM m s a -> s -> m a
-viewFM l = getConst . l (Const . pure)
-
-class Distributive' m f where
-  distribute' :: m (f a) -> f (m a)
-instance Monad m => Distributive' m (Const (m x)) where
-  distribute' = Const . join . fmap getConst
-```
-However, to make this implementation satisfy the subtyping condition "every
-`Getter` is a `GetterFM` we can't follow my previous trick and just pack the
-composition of `f` and `m` in `Compose`: the reason is that we have
-```hs
-instance (Functor f, Contravariant g) => Contravariant (Compose f g)
-```
-but there is no way to provide this instance when `f` is `Contravariant` and
-`g` is `Functor`. Of course, in this situation we could provide a new class
-```hs
-class (Functor f, Contravariant f) => Phantom f
-```
-and provide `instance Phantom f => Phantom (Compose f g)` since it's definitely
-takes place, but there's much cleaner solution, I've seen in Jules Hedges'
-[article][JH]: the main property of `Compose f m` is that we have a function
-```hs
-joinF :: Compose f m (m a) -> Compose f m a
-```
-So we can provide a class for this method:
-```hs
-class RightModule m f where
-  joinF :: f (m a) -> f a -- it's called `act` in Jules Hedges' article, but
-                          -- the name `joinF` seems be more meaningful for me
-```
-and then define the `GetterM` as
-```hs
-type GetterM m s a
-  = forall f. (Functor f, Contravariant f, Distributive' m f, RightModule m f)
-    => (a -> f a) -> s -> f s
-```
 
 [NOTE]: https://gist.github.com/Lev135/21a6f1f9f6fe471992603d8895f316e8
 [Getter-doc]: https://hackage.haskell.org/package/lens-5.2.2/docs/Control-Lens-Getter.html#t:Getter

@@ -63,12 +63,12 @@ library
     import:           basic
     hs-source-dirs:   src
     exposed-modules:  Control.Lens.Monadic
+                      Control.Lens.Monadic.Internal
                       Control.Lens.Monadic.Getter
                       Control.Lens.Monadic.Setter
                       Control.Lens.Monadic.Lens
                       Control.Lens.Monadic.Iso
                       Control.Lens.Monadic.Prism
-                      Control.Lens.Monadic.Type
                       Control.Lens.Monadic.Traversal
                       Control.Lens.Monadic.Fold
     build-depends:
@@ -103,6 +103,13 @@ executable examples
                       FMMF.Lens
                       FMMF.Prism
                       FMMF.Iso
+
+                      Params.Getter
+                      Params.Setter
+                      Params.Lens
+                      Params.Prism
+                      Params.Iso
+                      Params.Trans
 
     build-depends:    monadic-lens
                     , containers

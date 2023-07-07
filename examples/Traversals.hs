@@ -5,7 +5,6 @@ import Control.Lens
 import Control.Lens.Monadic.Iso
 import Control.Lens.Monadic.Setter
 import Control.Lens.Monadic.Traversal
-import Control.Lens.Monadic.Type
 import Control.Monad.Writer
 import Data.Functor (($>))
 import Prelude hiding (log)
@@ -13,7 +12,7 @@ import Prelude hiding (log)
 type Log = [String]
 
 log :: Show s => IsoM' (Writer Log) s s
-log = acting (\s -> tell ["forward " ++ show s])
+log = acting @(Writer Log) (\s -> tell ["forward " ++ show s])
              (\s -> tell ["backward " ++ show s])
 
 run :: Show a => Writer Log a -> IO ()
@@ -28,8 +27,8 @@ justFirst = log . _Just . log . _1 . log
 justFirsts :: TraversalM' (Writer Log) [Maybe (Int, Bool)] Int
 justFirsts = traversed . justFirst
 
-test :: (Show b) => LensLikeM (Writer Log) [] s t b b -> s -> Writer Log [t]
-test l = traverseOfM l $ \i -> tell ["found " ++ show i] $> [i]
+-- test :: (Show b) => LensLikeM (Writer Log) [] s t b b -> s -> Writer Log [t]
+-- test l = traverseOfM l $ \i -> tell ["found " ++ show i] $> [i]
 
 {-
 ghci> run $ test justFirst $ Just (42, False)

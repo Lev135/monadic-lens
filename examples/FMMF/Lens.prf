@@ -1,0 +1,30 @@
+view (lens h _) ≡ h:
+view (lens h _)
+  ≡ getConst . (\afb s -> _ s <$> afb (h s)) Const
+  ≡ getConst . (\s -> _ s <$> Const (h s))
+  ≡ getConst . (\s -> phantom $ Const (h s))
+  ≡ getConst . (Const . h)
+  ≡ h
+
+viewM (lensM h _)
+  ≡ getConst . (\afb s -> rjoin $ _ s <$> ljoin (afb <$> h s)) (Const . pure)
+  ≡ getConst . (\s -> rjoin $ _ s <$> ljoin (Const . pure <$> h s))
+  ≡ getConst . (\s -> rjoin $ _ s <$> (Const . ljoin . fmap getConst) (Const . pure <$> h s))
+  ≡ getConst . (\s -> rjoin $ _ s <$> (Const . ljoin) (pure <$> h s))
+  -- ljoin . (fmap pure) ≡ id
+  ≡ getConst . (\s -> rjoin $ _ s <$> Const (h s))
+  ≡ getConst . (\s -> phantom $ Const (h s))
+  ≡ getConst . phantom . Const . h
+  ≡ h
+
+setM (lensM getter setter) mb
+  ≡ lensM getter setter (const mb)
+  ≡ (\afb s -> rjoin $ setter s <$> ljoin (afb <$> getter s)) (const mb)
+  ≡ \s -> rjoin $ setter s <$> ljoin (const mb <$> getter s)
+  ≡ \s -> rjoin $ setter s <$> (join . fmap (const mb)) getter s
+  ≡ \s -> rjoin $ setter s <$> (const mb =<< getter s)
+  ≡ \s -> (join . fmap (setter s)) (mb <* getter s)
+  ≡ \s -> setter s =<< mb <* getter s
+
+setM (lensM getter setter) (pure b)
+  ≡ \s -> setter s b <* getter s

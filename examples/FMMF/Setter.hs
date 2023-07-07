@@ -15,11 +15,20 @@ setting h afb = pure . h (untainted . afb)
 over :: Setter s t a b -> (a -> b) -> s -> t
 over l ab = runIdentity . l (Identity . ab)
 
+replacer :: (b -> s -> t) -> Setter s t () b
+replacer h fb = setting (h . ($ ())) fb
+
+set :: Setter s t () b -> b -> s -> t
+set l b = runIdentity . l (Identity . const b)
+
 type SetterM m s t a b =
-  forall f. m ~ f => (a -> f b) -> s -> f t
+  forall f. (m ~ f) => (a -> f b) -> s -> f t
 
-settingM :: Applicative m => ((a -> m b) -> s -> m t) -> SetterM m s t a b
-settingM h afb = h afb
+settingM :: ((a -> m b) -> s -> m t) -> SetterM m s t a b
+settingM h = h
 
-overM :: SetterM m s t a b -> (a -> m b) -> s -> m t
-overM l amb s = l amb s
+overM :: Monad m => SetterM m s t a b -> (a -> m b) -> s -> m t
+overM l = l
+
+setM :: Monad m => SetterM m s t a b -> m b -> s -> m t
+setM l = overM l . const

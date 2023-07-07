@@ -1,50 +1,75 @@
+{-# LANGUAGE MonoLocalBinds         #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Eta reduce" #-}
+{-# LANGUAGE AllowAmbiguousTypes    #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
 module FMMF.Getter where
 
 import Control.Applicative
+import qualified Control.Lens as L
 import Control.Monad
+-- import Data.Functor.Compose
+import Control.Arrow (Kleisli(..))
+import Data.Functor.Compose
 import Data.Functor.Contravariant
 import Data.Kind
 
-class (Functor m, Functor f) => Distributive' m f where
-  distribute' :: m (f a) -> f (m a)
-  distribute' = collect' id
-  collect' :: (a -> f b) -> m a -> f (m b)
+type Ap :: forall k. k -> (Type -> Type) -> Type -> Type
+type family Ap t f = x where
+  Ap (t :: (Type -> Type) -> Type -> Type) f = t f
+  Ap (t :: Type -> Type) f = t
+
+class Foo t where
+  foo :: forall m a. m (Ap t m a) -> Ap t m a
+
 {-
-  collect' (fmap h . f) ≡ fmap (fmap h) . collect' f
-  collect' (f . g) ≡ collect' f . fmap g
+law> ljoin . fmap join ≡ ljoin join
+law> ljoin . fmap pure ≡ ljoin pure ≡ id
+law> ljoin . fmap (fmap f) ≡ fmap f . ljoin
 -}
-{-
-  f :: a -> m b
-  g :: b -> m c
-  collect' afa :: m c -> f (m d)
-  afa :: c -> f d
-  collect' afa . g :: b -> f (m d)
-  collect' (collect' afa . g) :: m b -> f (m (m d))
-  collect' (collect' afa . g) . f :: a -> f (m (m d))
-  collect' (phantom . collect' afa . g) . f ≡ collect' afa . (g <=< f)
--}
-instance Monad m => Distributive' m (Const (m x)) where
-  collect' f = Const . (getConst . f =<<)
+class (Monad m, Functor f) => LeftModule m f where
+  ljoin :: m (f a) -> f a
 
-instance Functor m => Distributive' m m where
-  collect' = fmap
+class (Monad m, Functor f) => RightModule m f where
+  rjoin :: f (m a) -> f a
 
-type RightModule :: (Type -> Type) -> (Type -> Type) -> Constraint
-class RightModule m f where
-  joinR :: f (m a) -> f a
+-- Const functor
 
-instance Monad m => RightModule m m where
-  joinR = join
+instance LeftModule m n => LeftModule m (Const (n x)) where
+  ljoin = Const . ljoin . fmap getConst
 
-instance {-# INCOHERENT #-} RightModule m (Const x) where
-  joinR = phantom
+instance (Monad m) => RightModule m (Const x) where
+  rjoin = phantom
+
+
+instance Monad m => RightModule m (Kleisli m a) where
+  rjoin = Kleisli . fmap join . runKleisli
+
+-- Compose functor
+
+instance (LeftModule m n, Functor f) => LeftModule m (Compose n f) where
+  ljoin = Compose . ljoin . fmap getCompose
+
+instance (RightModule m n, Functor f) => RightModule m (Compose f n) where
+  rjoin = Compose . fmap rjoin . getCompose
+
+type Module m f = (LeftModule m f, RightModule m f)
+
+-- Pure monad
+
+instance {-# INCOHERENT #-} Monad m => LeftModule m m where
+  ljoin = join
+
+instance {-# INCOHERENT #-} Monad m => RightModule m m where
+  rjoin = join
 
 type Getter s a =
   forall f. (Contravariant f, Functor f) =>
     (a -> f a) -> s -> f s
 
 type GetterM m s a =
-  forall f. (Contravariant f, Functor f, Distributive' m f, RightModule m f) =>
+  forall f. (Contravariant f, Functor f, Module m f) =>
     (a -> f a) -> s -> f s
 
 to :: (s -> a) -> Getter s a
@@ -54,10 +79,13 @@ view :: Getter s a -> s -> a
 view l = getConst . l Const
 
 toM :: Functor m => (s -> m a) -> GetterM m s a
-toM h afa = phantom . collect' afa . h
+toM h afa = phantom . ljoin . fmap afa . h
 
-viewM :: Monad m => GetterM m s a -> s -> m a
-viewM l = getConst . l (Const . pure)
+viewM :: forall m s a. Monad m => GetterM m s a -> s -> m a
+viewM l = getConst . l (Const . pure) -- L.views l pure
+
+getterMIsGettingM :: forall m s a. Monad m => GetterM m s a -> L.Getting (m a) s a
+getterMIsGettingM l = l
 
 {-
 (s -> m a) ≅ GetterM m s a:
